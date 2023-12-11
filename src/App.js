@@ -113,10 +113,10 @@ const parseKMP = (buffer) => {
 
     data.push(
       // points
-      { latex: `${a_[i]}=${cp.x1 / 100}` },
-      { latex: `${b_[i]}=${cp.z1 * -1 / 100}` },
-      { latex: `${c_[i]}=${cp.x2 / 100}` },
-      { latex: `${d_[i]}=${cp.z2 * -1 / 100}` },
+      { latex: `${a_[i]}=${cp.x1}` },
+      { latex: `${b_[i]}=${cp.z1 * -1}` },
+      { latex: `${c_[i]}=${cp.x2}` },
+      { latex: `${d_[i]}=${cp.z2 * -1}` },
       { latex: `(${a_[i]}, ${b_[i]})`, color: c },
       { latex: `(${c_[i]}, ${d_[i]})`, color: c },
       //midpoint with label
