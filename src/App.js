@@ -60,25 +60,13 @@ const parseKMP = (buffer) => {
     offset += 0x10;
   }
 
-  // pre-calculations
-  let a_ = [];
-  let b_ = [];
-  let c_ = [];
-  let d_ = [];
-  let s1 = [];
-  let s0 = [];
-  let vneg = [];
-  
-  for (let cp of checkpoints) {
-    let i = cp.id;
-    a_.push(`a_{${i}}`);
-    b_.push(`b_{${i}}`);
-    c_.push(`c_{${i}}`);
-    d_.push(`d_{${i}}`);
-    s1.push(`\\frac{ (${a_[i]}-${c_[i]}) }{ ((${a_[i]}-${c_[i]})^{2}\\ + \\ (${d_[i]}-${b_[i]})^{2})^{0.5} }`);
-    s0.push(`\\frac{ (${d_[i]}-${b_[i]}) }{ ((${a_[i]}-${c_[i]})^{2}\\ + \\ (${d_[i]}-${b_[i]})^{2})^{0.5} }`);
-    vneg.push(`${s0[i]}(x-${c_[i]})+${s1[i]}(y-${d_[i]})`);
-  }
+  const a_ = (i) => `a_{${i}}`;
+  const b_ = (i) => `b_{${i}}`;
+  const c_ = (i) => `c_{${i}}`;
+  const d_ = (i) => `d_{${i}}`;
+  const s1 = (i) => `\\frac{ (${a_(i)}-${c_(i)}) }{ ((${a_(i)}-${c_(i)})^{2}\\ + \\ (${d_(i)}-${b_(i)})^{2})^{0.5} }`;
+  const s0 = (i) => `\\frac{ (${d_(i)}-${b_(i)}) }{ ((${a_(i)}-${c_(i)})^{2}\\ + \\ (${d_(i)}-${b_(i)})^{2})^{0.5} }`;
+  const vneg = (i) => `${s0(i)}(x-${c_(i)})+${s1(i)}(y-${d_(i)})`;
 
   // create desmos equations
   let data = [];
@@ -113,25 +101,25 @@ const parseKMP = (buffer) => {
 
     data.push(
       // points
-      { latex: `${a_[i]}=${cp.x1}` },
-      { latex: `${b_[i]}=${cp.z1 * -1}` },
-      { latex: `${c_[i]}=${cp.x2}` },
-      { latex: `${d_[i]}=${cp.z2 * -1}` },
-      { latex: `(${a_[i]}, ${b_[i]})`, color: c },
-      { latex: `(${c_[i]}, ${d_[i]})`, color: c },
+      { latex: `${a_(i)}=${cp.x1}` },
+      { latex: `${b_(i)}=${cp.z1 * -1}` },
+      { latex: `${c_(i)}=${cp.x2}` },
+      { latex: `${d_(i)}=${cp.z2 * -1}` },
+      { latex: `(${a_(i)}, ${b_(i)})`, color: c },
+      { latex: `(${c_(i)}, ${d_(i)})`, color: c },
       //midpoint with label
-      { latex: `(0.5(${a_[i]}+${c_[i]}), 0.5(${b_[i]}+${d_[i]}))`, color: c, label: i, pointSize: 5, pointOpacity: 0.5, dragMode: drag },
+      { latex: `(0.5(${a_(i)}+${c_(i)}), 0.5(${b_(i)}+${d_(i)}))`, color: c, label: i, pointSize: 5, pointOpacity: 0.5, dragMode: drag },
       // checkpoint line
-      { latex: `((1-t)${a_[i]}+t${c_[i]}, (1-t)${b_[i]}+t${d_[i]})`, color: c },
+      { latex: `((1-t)${a_(i)}+t${c_(i)}, (1-t)${b_(i)}+t${d_(i)})`, color: c },
     );
 
     for (let nexti of nexts) {
-      let vborder1 = `-(${b_[nexti]}-${b_[i]})(x-${a_[nexti]})+(${a_[nexti]}-${a_[i]})(y-${b_[nexti]})`;
-      let vborder2 = `((${d_[nexti]}-${d_[i]})(x-${c_[i]})-(${c_[nexti]}-${c_[i]})(y-${d_[i]}))`;
+      let vborder1 = `-(${b_(nexti)}-${b_(i)})(x-${a_(nexti)})+(${a_(nexti)}-${a_(i)})(y-${b_(nexti)})`;
+      let vborder2 = `((${d_(nexti)}-${d_(i)})(x-${c_(i)})-(${c_(nexti)}-${c_(i)})(y-${d_(i)}))`;
 
       data.push(
         { latex: `B_{${i}t${nexti}}=(${vborder1}) * ${vborder2} + \\left|${vborder1}\\right| * -${vborder2}` },
-        { latex: `F_{${i}t${nexti}}=\\frac{${vneg[i]}}{${vneg[i]} - (${s0[nexti]}(x-${a_[nexti]})+${s1[nexti]}(y-${b_[nexti]}))}` },
+        { latex: `F_{${i}t${nexti}}=\\frac{${vneg(i)}}{${vneg(i)} - (${s0(nexti)}(x-${a_(nexti)})+${s1(nexti)}(y-${b_(nexti)}))}` },
       );
 
       // quad shading
@@ -141,16 +129,16 @@ const parseKMP = (buffer) => {
       // beginning split path gcps
       if (splitpaths && nexts.length > 1) {
         let splits = nexts.filter(index => index !== nexti).map(index => `\\left\\{B_{${i}t${index}} > 0\\right\\}`);
-        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg[i]} > 0\\right\\}`, color: ORANGE });
+        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg(i)} > 0\\right\\}`, color: ORANGE });
       }
     }
 
     for (let previ of prevs) {
-      data.push({ latex: `R_{${i}t${previ}}=\\frac{${vneg[i]}}{${vneg[i]} - (${s0[previ]}(x-${a_[previ]})+${s1[previ]}(y-${b_[previ]}))}` });
+      data.push({ latex: `R_{${i}t${previ}}=\\frac{${vneg(i)}}{${vneg(i)} - (${s0(previ)}(x-${a_(previ)})+${s1(previ)}(y-${b_(previ)}))}` });
       
       // ending split path gcps
       if (splitpaths && prevs.length > 1)
-        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg[i]} < 0\\right\\}`, color: ORANGE });
+        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg(i)} < 0\\right\\}`, color: ORANGE });
     }
 
     // normal gcps
