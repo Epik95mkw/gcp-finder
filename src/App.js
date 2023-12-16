@@ -23,7 +23,7 @@ export default function App() {
         <input id="upload" type="file" accept=".kmp" onChange={(ev) => readFile(ev.target.files[0])} />
       </div>
       <div className="row">
-        <DesmosEmbed data={data}/>
+        <DesmosEmbed data={data} debug={false}/>
       </div>
     </div>
   );

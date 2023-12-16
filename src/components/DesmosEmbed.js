@@ -3,7 +3,9 @@ import { Expression, GraphingCalculator } from "desmos-react";
 import "../style.css"
 
 
-export default function DesmosEmbed({ data }) {
+export default function DesmosEmbed({ data, debug }) {
+  debug = debug || false;
+
   const calcRef = useRef(null);
   useEffect(() => {
     calcRef.current?.setMathBounds({ left: -200000, right: 200000, bottom: -100000, top: 100000 });
@@ -17,11 +19,11 @@ export default function DesmosEmbed({ data }) {
     <GraphingCalculator
     ref={calcRef}
     attributes={{ className: 'calculator' }}
-    expressions={false}
+    expressions={debug}
     showGrid={false}
     showXAxis={false}
     showYAxis={false}
-    settingsMenu={true}
+    settingsMenu={debug}
     >
       {exprs}
     </GraphingCalculator>
