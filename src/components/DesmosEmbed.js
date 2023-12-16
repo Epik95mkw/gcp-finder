@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Expression, GraphingCalculator } from "desmos-react";
-import "./style.css"
+import "../style.css"
 
 
 export default function DesmosEmbed({ data }) {
@@ -17,11 +17,11 @@ export default function DesmosEmbed({ data }) {
     <GraphingCalculator
     ref={calcRef}
     attributes={{ className: 'calculator' }}
-    expressions={true}
+    expressions={false}
     showGrid={false}
     showXAxis={false}
     showYAxis={false}
-    settingsMenu={false}
+    settingsMenu={true}
     >
       {exprs}
     </GraphingCalculator>
