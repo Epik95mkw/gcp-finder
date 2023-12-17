@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './style.css';
 import { testData } from "./utils/testData";
 import DesmosEmbed from "./components/DesmosEmbed";
-import parseKMP from './utils/parseKMP';
+import kmpData from './utils/kmpData';
 
 export default function App() {
   const [data, setData] = useState(null);
@@ -10,7 +10,7 @@ export default function App() {
   const readFile = (file) => {
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = (ev) => setData(parseKMP(reader.result));
+    reader.onloadend = (ev) => setData(kmpData.toDesmos(reader.result));
     reader.readAsArrayBuffer(file);
   }
 

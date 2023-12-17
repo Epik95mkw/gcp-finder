@@ -5,7 +5,13 @@ const GREEN = '#388c46';
 const PURPLE = '#6042a6';
 const ORANGE = '#fa7e19';
 
-export default function parseKMP(buffer) {
+
+function toDesmos(buffer) {
+  return kmpToGraph(parseKMP(buffer));
+}
+
+
+function parseKMP(buffer) {
   let view = new DataView(buffer);
   const ckptPointer = view.getUint32(0x24) + 0x4C;
   const ckphPointer = view.getUint32(0x28) + 0x4C;
@@ -56,6 +62,143 @@ export default function parseKMP(buffer) {
     offset += 0x10;
   }
 
+  return { checkpoints, groups };
+}
+
+
+function findGCPs(kmpData) {
+  const { checkpoints, groups } = kmpData;
+  let currentGroup = 0;
+  let gcplist = [];
+
+  let a_, b_, c_, d_, s1, s0, prevs, nexts, cpline;
+
+  a_ = [];
+  b_ = [];
+  c_ = [];
+  d_ = [];
+  s1 = [];
+  s0 = [];
+  prevs = [];
+  nexts = [];
+  cpline = [];
+
+  for (let cp of checkpoints) {
+    let i = cp.id;
+    a_.push(cp.x1);
+    b_.push(cp.z1 * -1);
+    c_.push(cp.x2);
+    d_.push(cp.z2 * -1);
+    s1.push((a_[i] - c_[i]) / ((a_[i] - c_[i]) ** 2 + (d_[i] - b_[i]) ** 2) ** 0.5);
+    s0.push((d_[i] - b_[i]) / ((a_[i] - c_[i]) ** 2 + (d_[i] - b_[i]) ** 2) ** 0.5);
+    cpline.push([s0[i], s1[i], (s0[i] * -c_[i]) + (s1[i] * -d_[i])]);
+
+    if (cp.prev === 255) {
+      prevs = groups[currentGroup].prev
+        .filter(index => index !== 255)
+        .map(index => groups[index].start + groups[index].length - 1);
+    } else {
+      prevs = [cp.prev];
+    }
+
+    if (cp.next === 255) {
+      nexts = groups[currentGroup++].next
+        .filter(index => index !== 255)
+        .map(index => groups[index].start);
+    } else {
+      nexts = [cp.next];
+    }
+  }
+
+  let fbdr1, fbdr2, rbdr1, rbdr2, vfor, vback;
+
+  for (let i = 0; i < checkpoints.length; i++) {
+    fbdr1 = [];
+    fbdr2 = [];
+    rbdr1 = [];
+    rbdr2 = [];
+    vfor = [];
+    vback = [];
+
+    for (let nexti of nexts[i]) {
+      let v1 = -(b_[nexti] - b_[i]);
+      let v2 = a_[nexti] - a_[i];
+      fbdr1.push([v1, v2, -a_[nexti] * v1 - b_[nexti] * v2]);
+
+      v1 = d_[nexti] - d_[i];
+      v2 = -(c_[nexti] - c_[i]);
+      fbdr2.push([v1, v2, -c_[i] * v1 - d_[i] * v2]);
+
+      let vf = [s0[nexti], s1[nexti], s0[nexti] * -a_[nexti] + s1[nexti] * -b_[nexti]];
+      vfor.push([cpline[i][0] - vf[0], cpline[i][1] - vf[1], cpline[i][2] - vf[2]]);
+    }
+
+    for (let previ of prevs[i]) {
+      let v1 = -(b_[i] - b_[previ]);
+      let v2 = a_[i] - a_[previ];
+      rbdr1.push([v1, v2, -a_[i] * v1 - b_[i] * v2]);
+
+      v1 = d_[i] - d_[previ];
+      v2 = -(c_[i] - c_[previ]);
+      rbdr2.push([v1, v2, -c_[i] * v1 - d_[i] * v2]);
+
+      let vr = [s0[previ], s1[previ], s0[previ] * -a_[previ] + s1[previ] * -b_[previ]];
+      vback.push([cpline[i][0] - vr[0], cpline[i][1] - vr[1], cpline[i][2] - vr[2]]);
+    }
+
+    for (let j = 0; j < nexts[i].length; j++) {
+      for (let k = 0; k < prevs[i].length; k++) {
+        let target = [0, 0];
+        let mat1 = [
+          [fbdr1[j][0], fbdr1[j][1]],
+          [rbdr1[k][0], rbdr1[k][1]],
+          [fbdr2[j][0], fbdr2[j][1]],
+          [rbdr2[k][0], rbdr2[k][1]],
+          [-cpline[i][0], -cpline[i][1]],
+          [vfor[j][0], vfor[j][1]],
+          [vback[k][0], vback[k][1]]
+        ];
+        let const1 = [
+          -fbdr1[j][2],
+          -rbdr1[k][2],
+          -fbdr2[j][2],
+          -rbdr2[k][2],
+          cpline[i][2],
+          -vfor[j][2],
+          -vback[k][2]
+        ];
+
+        let mat2 = [
+          [fbdr1[j][0], fbdr1[j][1]],
+          [rbdr1[k][0], rbdr1[k][1]],
+          [fbdr2[j][0], fbdr2[j][1]],
+          [rbdr2[k][0], rbdr2[k][1]],
+          [cpline[i][0], cpline[i][1]],
+          [-vfor[j][0], -vfor[j][1]],
+          [-vback[k][0], -vback[k][1]]
+        ];
+        let const2 = [
+          -fbdr1[j][2],
+          -rbdr1[k][2],
+          -fbdr2[j][2],
+          -rbdr2[k][2],
+          -cpline[i][2],
+          vfor[j][2],
+          vback[k][2]
+        ];
+
+        // linprog stuff
+      }
+    }
+  }
+
+  return gcplist;
+}
+
+
+function kmpToGraph(kmpData) {
+  const { checkpoints, groups } = kmpData;
+
   const a_ = (i) => `a_{${i}}`;
   const b_ = (i) => `b_{${i}}`;
   const c_ = (i) => `c_{${i}}`;
@@ -75,6 +218,8 @@ export default function parseKMP(buffer) {
   for (let cp of checkpoints) {
     let i = cp.id
     let c = { 255: BLUE, 0: GREEN }[cp.type] || PURPLE;
+
+    let isGCP = false;
     
     // calculate lists of backwards and forwards checkpoint links
     let prevs, nexts; 
@@ -147,3 +292,6 @@ export default function parseKMP(buffer) {
 
   return data;
 }
+
+
+export default { toDesmos };
