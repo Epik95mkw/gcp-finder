@@ -23,10 +23,12 @@ code {
 }
 
 #upload {
-  padding-bottom: 20px;
+  padding-bottom: 10px;
 }
 
 .calculator {
-  width: 80vw;
-  height: 40vw;
+  width: 80vw;      /* min(80vw, 140vh); */
+  height: 40vw;     /* min(40vw, 70vh);  */
+  padding-bottom: 10px;
+  padding-top: 10px;
 }

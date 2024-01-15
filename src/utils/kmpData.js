@@ -6,8 +6,10 @@ const PURPLE = '#6042a6';
 const ORANGE = '#fa7e19';
 
 
-function toDesmos(buffer) {
-  return kmpToGraph(parseKMP(buffer));
+async function toDesmos(buffer) {
+  const data = parseKMP(buffer);
+  const { gcps, error } = await findGCPs(data);
+  return { equations: kmpToGraph(data, gcps || []), error };
 }
 
 
@@ -66,137 +68,27 @@ function parseKMP(buffer) {
 }
 
 
-function findGCPs(kmpData) {
-  const { checkpoints, groups } = kmpData;
-  let currentGroup = 0;
-  let gcplist = [];
+async function findGCPs(kmpData) {
+  const url = 'http://localhost:5000/api/calculate'
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(kmpData),
+    });
 
-  let a_, b_, c_, d_, s1, s0, prevs, nexts, cpline;
-
-  a_ = [];
-  b_ = [];
-  c_ = [];
-  d_ = [];
-  s1 = [];
-  s0 = [];
-  prevs = [];
-  nexts = [];
-  cpline = [];
-
-  for (let cp of checkpoints) {
-    let i = cp.id;
-    a_.push(cp.x1);
-    b_.push(cp.z1 * -1);
-    c_.push(cp.x2);
-    d_.push(cp.z2 * -1);
-    s1.push((a_[i] - c_[i]) / ((a_[i] - c_[i]) ** 2 + (d_[i] - b_[i]) ** 2) ** 0.5);
-    s0.push((d_[i] - b_[i]) / ((a_[i] - c_[i]) ** 2 + (d_[i] - b_[i]) ** 2) ** 0.5);
-    cpline.push([s0[i], s1[i], (s0[i] * -c_[i]) + (s1[i] * -d_[i])]);
-
-    if (cp.prev === 255) {
-      prevs = groups[currentGroup].prev
-        .filter(index => index !== 255)
-        .map(index => groups[index].start + groups[index].length - 1);
-    } else {
-      prevs = [cp.prev];
-    }
-
-    if (cp.next === 255) {
-      nexts = groups[currentGroup++].next
-        .filter(index => index !== 255)
-        .map(index => groups[index].start);
-    } else {
-      nexts = [cp.next];
-    }
+    const gcps = await response.json();
+    return { gcps, error: null };
+  } 
+  catch (error) {
+    return { gcps: null, error };
   }
-
-  let fbdr1, fbdr2, rbdr1, rbdr2, vfor, vback;
-
-  for (let i = 0; i < checkpoints.length; i++) {
-    fbdr1 = [];
-    fbdr2 = [];
-    rbdr1 = [];
-    rbdr2 = [];
-    vfor = [];
-    vback = [];
-
-    for (let nexti of nexts[i]) {
-      let v1 = -(b_[nexti] - b_[i]);
-      let v2 = a_[nexti] - a_[i];
-      fbdr1.push([v1, v2, -a_[nexti] * v1 - b_[nexti] * v2]);
-
-      v1 = d_[nexti] - d_[i];
-      v2 = -(c_[nexti] - c_[i]);
-      fbdr2.push([v1, v2, -c_[i] * v1 - d_[i] * v2]);
-
-      let vf = [s0[nexti], s1[nexti], s0[nexti] * -a_[nexti] + s1[nexti] * -b_[nexti]];
-      vfor.push([cpline[i][0] - vf[0], cpline[i][1] - vf[1], cpline[i][2] - vf[2]]);
-    }
-
-    for (let previ of prevs[i]) {
-      let v1 = -(b_[i] - b_[previ]);
-      let v2 = a_[i] - a_[previ];
-      rbdr1.push([v1, v2, -a_[i] * v1 - b_[i] * v2]);
-
-      v1 = d_[i] - d_[previ];
-      v2 = -(c_[i] - c_[previ]);
-      rbdr2.push([v1, v2, -c_[i] * v1 - d_[i] * v2]);
-
-      let vr = [s0[previ], s1[previ], s0[previ] * -a_[previ] + s1[previ] * -b_[previ]];
-      vback.push([cpline[i][0] - vr[0], cpline[i][1] - vr[1], cpline[i][2] - vr[2]]);
-    }
-
-    for (let j = 0; j < nexts[i].length; j++) {
-      for (let k = 0; k < prevs[i].length; k++) {
-        let target = [0, 0];
-        let mat1 = [
-          [fbdr1[j][0], fbdr1[j][1]],
-          [rbdr1[k][0], rbdr1[k][1]],
-          [fbdr2[j][0], fbdr2[j][1]],
-          [rbdr2[k][0], rbdr2[k][1]],
-          [-cpline[i][0], -cpline[i][1]],
-          [vfor[j][0], vfor[j][1]],
-          [vback[k][0], vback[k][1]]
-        ];
-        let const1 = [
-          -fbdr1[j][2],
-          -rbdr1[k][2],
-          -fbdr2[j][2],
-          -rbdr2[k][2],
-          cpline[i][2],
-          -vfor[j][2],
-          -vback[k][2]
-        ];
-
-        let mat2 = [
-          [fbdr1[j][0], fbdr1[j][1]],
-          [rbdr1[k][0], rbdr1[k][1]],
-          [fbdr2[j][0], fbdr2[j][1]],
-          [rbdr2[k][0], rbdr2[k][1]],
-          [cpline[i][0], cpline[i][1]],
-          [-vfor[j][0], -vfor[j][1]],
-          [-vback[k][0], -vback[k][1]]
-        ];
-        let const2 = [
-          -fbdr1[j][2],
-          -rbdr1[k][2],
-          -fbdr2[j][2],
-          -rbdr2[k][2],
-          -cpline[i][2],
-          vfor[j][2],
-          vback[k][2]
-        ];
-
-        // linprog stuff
-      }
-    }
-  }
-
-  return gcplist;
 }
 
 
-function kmpToGraph(kmpData) {
+function kmpToGraph(kmpData, gcps) {
   const { checkpoints, groups } = kmpData;
 
   const a_ = (i) => `a_{${i}}`;
@@ -213,13 +105,12 @@ function kmpToGraph(kmpData) {
   let drag = 'NONE';
 
   let fillquads = true;
-  let splitpaths = false;
+  let splitpaths = true;
 
   for (let cp of checkpoints) {
     let i = cp.id
-    let c = { 255: BLUE, 0: GREEN }[cp.type] || PURPLE;
-
-    let isGCP = false;
+    let quadColor = { 255: BLUE, 0: GREEN }[cp.type] || PURPLE;
+    let lineColor = gcps.includes(i) ? RED : quadColor;
     
     // calculate lists of backwards and forwards checkpoint links
     let prevs, nexts; 
@@ -246,12 +137,12 @@ function kmpToGraph(kmpData) {
       { latex: `${b_(i)}=${cp.z1 * -1}` },
       { latex: `${c_(i)}=${cp.x2}` },
       { latex: `${d_(i)}=${cp.z2 * -1}` },
-      { latex: `(${a_(i)}, ${b_(i)})`, color: c },
-      { latex: `(${c_(i)}, ${d_(i)})`, color: c },
+      { latex: `(${a_(i)}, ${b_(i)})`, color: lineColor },
+      { latex: `(${c_(i)}, ${d_(i)})`, color: lineColor },
       //midpoint with label
-      { latex: `(0.5(${a_(i)}+${c_(i)}), 0.5(${b_(i)}+${d_(i)}))`, color: c, label: i, pointSize: 5, pointOpacity: 0.5, dragMode: drag },
+      { latex: `(0.5(${a_(i)}+${c_(i)}), 0.5(${b_(i)}+${d_(i)}))`, color: lineColor, label: i, pointSize: 5, pointOpacity: 0.5, dragMode: drag },
       // checkpoint line
-      { latex: `((1-t)${a_(i)}+t${c_(i)}, (1-t)${b_(i)}+t${d_(i)})`, color: c },
+      { latex: `((1-t)${a_(i)}+t${c_(i)}, (1-t)${b_(i)}+t${d_(i)})`, color: lineColor },
     );
 
     for (let nexti of nexts) {
@@ -265,7 +156,7 @@ function kmpToGraph(kmpData) {
 
       // quad shading
       if (fillquads)
-        data.push({ latex: `B_{${i}t${nexti}} > 0 \\left\\{R_{${nexti}t${i}} > 0\\right\\} \\left\\{F_{${i}t${nexti}} > 0\\right\\}`, color: c });
+        data.push({ latex: `B_{${i}t${nexti}} > 0 \\left\\{R_{${nexti}t${i}} > 0\\right\\} \\left\\{F_{${i}t${nexti}} > 0\\right\\}`, color: quadColor });
 
       // beginning split path gcps
       if (splitpaths && nexts.length > 1) {
