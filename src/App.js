@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import './style.css';
-import { testData } from "./utils/testData";
 import DesmosEmbed from "./components/DesmosEmbed";
 import kmpData from './utils/kmpData';
 

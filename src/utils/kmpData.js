@@ -69,9 +69,9 @@ function parseKMP(buffer) {
 
 
 async function findGCPs(kmpData) {
-  const url = 'http://localhost:5000/api/calculate'
+  const path = '/api/calculate'
   try {
-    const response = await fetch(url, {
+    const response = await fetch(path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
