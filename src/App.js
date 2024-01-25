@@ -24,9 +24,8 @@ export default function App() {
 
   return (
     <div className="App">
-      <div className="row">
-        <h1>Ghost Checkpoint Viewer</h1>
-      </div>
+      <h1>Ghost Checkpoint Viewer</h1>
+      <p id="author">by EPIK95</p>
       <div className="row">
         <input id="upload" type="file" accept=".kmp" onChange={(ev) => readFile(ev.target.files[0])} />
         <label>
