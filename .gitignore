@@ -26,3 +26,6 @@ yarn-error.log*
 /.idea
 /venv
 /__pycache__
+Dockerfile
+.dockerignore
+fly.toml
