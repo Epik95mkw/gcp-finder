@@ -5,6 +5,8 @@ const GREEN = '#388c46';
 const PURPLE = '#6042a6';
 const ORANGE = '#fa7e19';
 
+const RANGE = 500000;
+
 
 async function toDesmos(buffer) {
   const data = parseKMP(buffer);
@@ -69,7 +71,7 @@ function parseKMP(buffer) {
 
 
 async function findGCPs(kmpData) {
-  const path = '/api/calculate'
+  const path = `/api/calculate?range=${RANGE}`;
   try {
     const response = await fetch(path, {
       method: "POST",
@@ -90,6 +92,7 @@ async function findGCPs(kmpData) {
 
 function kmpToGraph(kmpData, gcps) {
   const { checkpoints, groups } = kmpData;
+  const bounds = RANGE ? `\\left\\{-${RANGE}<x<${RANGE}\\right\\}\\left\\{-${RANGE}<y<${RANGE}\\right\\}` : '';
 
   const a_ = (i) => `a_{${i}}`;
   const b_ = (i) => `b_{${i}}`;
@@ -160,7 +163,7 @@ function kmpToGraph(kmpData, gcps) {
       // beginning split path gcps
       if (nexts.length > 1) {
         let splits = nexts.filter(index => index !== nexti).map(index => `\\left\\{B_{${i}t${index}} > 0\\right\\}`);
-        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg(i)} > 0\\right\\}`, color: ORANGE, splitpath: true });
+        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg(i)} > 0\\right\\}` + bounds, color: ORANGE, splitpath: true });
       }
     }
 
@@ -169,13 +172,13 @@ function kmpToGraph(kmpData, gcps) {
       
       // ending split path gcps
       if (prevs.length > 1)
-        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg(i)} < 0\\right\\}`, color: ORANGE, splitpath: true });
+        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg(i)} < 0\\right\\}` + bounds, color: ORANGE, splitpath: true });
     }
 
     // normal gcps
     for (let previ of prevs) {
       for (let nexti of nexts) {
-        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${nexti}} > 0\\right\\}\\left\\{R_{${i}t${previ}} < 0\\right\\} \\left\\{F_{${i}t${nexti}} < 0\\right\\}`, color: RED });
+        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${nexti}} > 0\\right\\}\\left\\{R_{${i}t${previ}} < 0\\right\\} \\left\\{F_{${i}t${nexti}} < 0\\right\\}` + bounds, color: RED });
       }
     }
   }

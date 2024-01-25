@@ -20,8 +20,13 @@ def serve():
 @app.route('/api/calculate', methods=['POST'])
 def find_gcps():
     kmp = request.json
-    bounds = (None, None)
     verbose = False
+
+    try:
+        range_arg: str = request.args.get('range', None, int)
+        bounds = (None, None) if range_arg is None else (-range_arg, range_arg)
+    except ValueError:
+        bounds = (None, None)
 
     ckpt = kmp['checkpoints']
     ckph = kmp['groups']

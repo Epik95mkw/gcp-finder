@@ -8,7 +8,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSplitPaths, setShowSplitPaths] = useState(false);
-  const toggleSplitPaths = () => setShowSplitPaths(!showSplitPaths);
 
   const readFile = (file) => {
     if (!file) return;
@@ -31,7 +30,7 @@ export default function App() {
       <div className="row">
         <input id="upload" type="file" accept=".kmp" onChange={(ev) => readFile(ev.target.files[0])} />
         <label>
-          <input id="splitpaths" type="checkbox" checked={showSplitPaths} onChange={toggleSplitPaths} />
+          <input id="splitpaths" type="checkbox" checked={showSplitPaths} onChange={() => setShowSplitPaths(!showSplitPaths)} />
           Display Split Path GCPs
         </label>
       </div>
