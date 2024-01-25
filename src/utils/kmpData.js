@@ -105,7 +105,6 @@ function kmpToGraph(kmpData, gcps) {
   let drag = 'NONE';
 
   let fillquads = true;
-  let splitpaths = false;
 
   for (let cp of checkpoints) {
     let i = cp.id
@@ -159,9 +158,9 @@ function kmpToGraph(kmpData, gcps) {
         data.push({ latex: `B_{${i}t${nexti}} > 0 \\left\\{R_{${nexti}t${i}} > 0\\right\\} \\left\\{F_{${i}t${nexti}} > 0\\right\\}`, color: quadColor });
 
       // beginning split path gcps
-      if (splitpaths && nexts.length > 1) {
+      if (nexts.length > 1) {
         let splits = nexts.filter(index => index !== nexti).map(index => `\\left\\{B_{${i}t${index}} > 0\\right\\}`);
-        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg(i)} > 0\\right\\}`, color: ORANGE });
+        data.push({ latex: `B_{${nexti}t${nexti + 1}} > 0 ` + splits + `\\left\\{${vneg(i)} > 0\\right\\}`, color: ORANGE, splitpath: true });
       }
     }
 
@@ -169,8 +168,8 @@ function kmpToGraph(kmpData, gcps) {
       data.push({ latex: `R_{${i}t${previ}}=\\frac{${vneg(i)}}{${vneg(i)} - (${s0(previ)}(x-${a_(previ)})+${s1(previ)}(y-${b_(previ)}))}` });
       
       // ending split path gcps
-      if (splitpaths && prevs.length > 1)
-        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg(i)} < 0\\right\\}`, color: ORANGE });
+      if (prevs.length > 1)
+        data.push({ latex: `B_{${previ}t${i}} > 0 \\left\\{B_{${i}t${i + 1}} > 0\\right\\}\\left\\{${vneg(i)} < 0\\right\\}`, color: ORANGE, splitpath: true });
     }
 
     // normal gcps

@@ -3,7 +3,7 @@ import { Expression, GraphingCalculator } from "desmos-react";
 import "../style.css"
 
 
-export default function DesmosEmbed({ data, debug }) {
+export default function DesmosEmbed({ data, debug, showSplitPaths }) {
   debug = debug || false;
 
   const calcRef = useRef(null);
@@ -12,7 +12,7 @@ export default function DesmosEmbed({ data, debug }) {
   }, []);
 
   const exprs = data?.map(
-    (x, i) => <Expression {...x} id={i} key={i} />  // {window.Desmos.DragModes[x.dragMode]}
+    (x, i) => <Expression {...x} id={i} key={i} hidden={x.splitpath ? !showSplitPaths : false} />
   );
   
   return (

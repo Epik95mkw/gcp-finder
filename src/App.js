@@ -7,6 +7,8 @@ export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showSplitPaths, setShowSplitPaths] = useState(false);
+  const toggleSplitPaths = () => setShowSplitPaths(!showSplitPaths);
 
   const readFile = (file) => {
     if (!file) return;
@@ -28,12 +30,16 @@ export default function App() {
       </div>
       <div className="row">
         <input id="upload" type="file" accept=".kmp" onChange={(ev) => readFile(ev.target.files[0])} />
+        <label>
+          <input id="splitpaths" type="checkbox" checked={showSplitPaths} onChange={toggleSplitPaths} />
+          Display Split Path GCPs
+        </label>
       </div>
       <div className="row">
         {error ? "Warning: Failed to calculate source checkpoints" : loading ? "Loading..." : <br/>}
       </div>
       <div className="row">
-        <DesmosEmbed data={data} debug={false}/>
+        <DesmosEmbed data={data} debug={false} showSplitPaths={showSplitPaths}/>
       </div>
     </div>
   );
