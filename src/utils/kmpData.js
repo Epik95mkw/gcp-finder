@@ -105,7 +105,7 @@ function kmpToGraph(kmpData, gcps) {
   let drag = 'NONE';
 
   let fillquads = true;
-  let splitpaths = true;
+  let splitpaths = false;
 
   for (let cp of checkpoints) {
     let i = cp.id
